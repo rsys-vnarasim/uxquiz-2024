@@ -18,15 +18,12 @@
     <!-- Feedback container for showing correct/incorrect messages -->
     <div id="feedback" class="feedback"></div>
 
-    <script>
-        // Ensures all modules are loaded before starting the game
+        <script type="module">
         async function initGame() {
             try {
-                // Load game modules
                 const gameModule = await import('./js/game.js');
                 const { default: quizData } = await import('./js/questions.js');
-
-                // Initialize game
+                
                 window.game = new gameModule.default(
                     document.getElementById('game-container'),
                     quizData
@@ -42,8 +39,7 @@
                 `;
             }
         }
-
-        // Start initialization when page loads
+    
         window.addEventListener('load', initGame);
     </script>
 
