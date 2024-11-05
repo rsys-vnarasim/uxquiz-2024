@@ -1,309 +1,67 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UX Quiz Game</title>
-    <style>
-        /* All CSS from previous version */
-        body {
-            margin: 0;
-            font-family: system-ui, -apple-system, sans-serif;
-            overflow: hidden;
-        }
-        
-        .slide {
-            display: none;
-            height: 100vh;
-            padding: 2rem;
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            color: white;
-            text-align: center;
-        }
-
-        .slide.active {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .title {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            background: linear-gradient(45deg, #4CAF50, #2196F3);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .subtitle {
-            font-size: 1.5rem;
-            margin-bottom: 2rem;
-            color: #81e6d9;
-        }
-
-        .question {
-            font-size: 1.5rem;
-            margin-bottom: 2rem;
-            width: 80%;
-            max-width: 800px;
-        }
-
-        .options {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-            width: 80%;
-            max-width: 800px;
-        }
-
-        .option {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 1rem;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .option:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: scale(1.02);
-        }
-
-        .option.selected {
-            background: rgba(76, 175, 80, 0.3);
-        }
-
-        .option.correct {
-            background: rgba(76, 175, 80, 0.5);
-        }
-
-        .option.incorrect {
-            background: rgba(244, 67, 54, 0.5);
-        }
-
-        .controls {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            display: flex;
-            gap: 1rem;
-        }
-
-        .control-btn {
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 4px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .control-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .control-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .timer-bar {
-            width: 50%;
-            height: 6px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
-            margin: 1rem auto;
-            position: relative;
-        }
-
-        .timer-progress {
-            position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
-            background: #4CAF50;
-            border-radius: 3px;
-            transition: width 1s linear;
-        }
-
-        .level-indicator {
-            position: fixed;
-            top: 2rem;
-            right: 2rem;
-            padding: 0.5rem 1rem;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-        }
-
-        .score-board {
-            position: fixed;
-            top: 2rem;
-            left: 2rem;
-            padding: 0.5rem 1rem;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-        }
-
-        .lifelines {
-            position: fixed;
-            bottom: 2rem;
-            left: 2rem;
-            display: flex;
-            gap: 1rem;
-        }
-
-        .lifeline {
-            padding: 0.5rem 1rem;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .lifeline.used {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .prize-levels {
-            position: fixed;
-            right: 2rem;
-            top: 50%;
-            transform: translateY(-50%);
-            text-align: right;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 1rem;
-            border-radius: 4px;
-        }
-
-        .level-reached {
-            color: #4CAF50;
-        }
-
-        @media (max-width: 768px) {
-            .options {
-                grid-template-columns: 1fr;
-            }
-            
-            .prize-levels {
-                display: none;
-            }
-            
-            .title {
-                font-size: 2rem;
-            }
-            
-            .subtitle {
-                font-size: 1.2rem;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div id="game-container">
-        <!-- All slides will be dynamically inserted here -->
+        <!-- Initial loading state -->
+        <div class="slide active">
+            <h1 class="title">Loading UX Quiz...</h1>
+            <div class="subtitle">Please wait</div>
+        </div>
     </div>
 
+    <!-- Feedback container for showing correct/incorrect messages -->
+    <div id="feedback" class="feedback"></div>
+
     <script>
-        // Quiz questions and game logic
-        const quizData = {
-            levels: [
-                {
-                    name: "Level 1",
-                    points: 10,
-                    questions: [
-                        {
-                            text: "You're designing a data table with 100 columns. Choose:",
-                            options: [
-                                "Show all columns by default",
-                                "Show 10 most used columns with 'Add Columns' option",
-                                "Show 50 columns with horizontal scroll",
-                                "Let users pick columns during first use"
-                            ],
-                            correct: 1
-                        },
-                        // Add more questions from our previous list
-                    ]
-                },
-                // Add more levels
-            ]
-        };
+        // Ensures all modules are loaded before starting the game
+        async function initGame() {
+            try {
+                // Load game modules
+                const gameModule = await import('./js/game.js');
+                const { default: quizData } = await import('./js/questions.js');
 
-        class QuizGame {
-            constructor(container, data) {
-                this.container = container;
-                this.data = data;
-                this.currentLevel = 0;
-                this.currentQuestion = 0;
-                this.score = 0;
-                this.lifelines = {
-                    fifty: true,
-                    skip: true,
-                    hint: true
-                };
-                
-                this.init();
-            }
-
-            init() {
-                this.renderWelcomeScreen();
-            }
-
-            renderWelcomeScreen() {
-                this.container.innerHTML = `
+                // Initialize game
+                window.game = new gameModule.default(
+                    document.getElementById('game-container'),
+                    quizData
+                );
+                game.init();
+            } catch (error) {
+                console.error('Failed to initialize game:', error);
+                document.getElementById('game-container').innerHTML = `
                     <div class="slide active">
-                        <h1 class="title">The Ultimate UX Challenge</h1>
-                        <h2 class="subtitle">"Who Wants to Be a UX Expert?"</h2>
-                        <div class="timer-bar">
-                            <div class="timer-progress" style="width: 100%"></div>
-                        </div>
-                        <button class="control-btn" onclick="game.startGame()">Start Game</button>
+                        <h1 class="title">Error Loading Game</h1>
+                        <div class="subtitle">Please check console for details</div>
                     </div>
                 `;
             }
-
-            startGame() {
-                this.renderQuestion();
-            }
-
-            renderQuestion() {
-                const level = this.data.levels[this.currentLevel];
-                const question = level.questions[this.currentQuestion];
-
-                this.container.innerHTML = `
-                    <div class="slide active">
-                        <div class="level-indicator">Level ${this.currentLevel + 1}</div>
-                        <div class="score-board">Score: ${this.score}</div>
-                        <div class="question">${question.text}</div>
-                        <div class="timer-bar">
-                            <div class="timer-progress" style="width: 100%"></div>
-                        </div>
-                        <div class="options">
-                            ${question.options.map((option, index) => `
-                                <div class="option" onclick="game.selectOption(${index})">${option}</div>
-                            `).join('')}
-                        </div>
-                        <div class="lifelines">
-                            ${this.renderLifelines()}
-                        </div>
-                        <div class="prize-levels">
-                            ${this.renderPrizeLevels()}
-                        </div>
-                    </div>
-                `;
-
-                this.startTimer();
-            }
-
-            // Add more game methods...
         }
 
-        // Initialize game
-        const game = new QuizGame(
-            document.getElementById('game-container'),
-            quizData
-        );
+        // Start initialization when page loads
+        window.addEventListener('load', initGame);
     </script>
+
+    <!-- Error handling for older browsers -->
+    <script nomodule>
+        document.getElementById('game-container').innerHTML = `
+            <div class="slide active">
+                <h1 class="title">Browser Not Supported</h1>
+                <div class="subtitle">Please use a modern browser to play this game</div>
+            </div>
+        `;
+    </script>
+
+    <noscript>
+        <div class="slide active">
+            <h1 class="title">JavaScript Required</h1>
+            <div class="subtitle">Please enable JavaScript to play this game</div>
+        </div>
+    </noscript>
 </body>
 </html>
