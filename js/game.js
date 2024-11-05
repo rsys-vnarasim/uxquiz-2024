@@ -1,5 +1,5 @@
 // game.js
-class QuizGame {
+export default class QuizGame {
     constructor(container, data) {
         this.container = container;
         this.data = data;
@@ -12,7 +12,7 @@ class QuizGame {
             hint: true
         };
         this.timer = null;
-        this.timeLimit = 30; // seconds per question
+        this.timeLimit = 30;
     }
 
     init() {
@@ -31,15 +31,30 @@ class QuizGame {
 
     startGame() {
         this.renderQuestion();
+        this.startTimer();
     }
 
     renderQuestion() {
+        if (this.currentLevel >= this.data.levels.length) {
+            this.endGame();
+            return;
+        }
+
         const level = this.data.levels[this.currentLevel];
-        const question = level.questions[this.currentQuestion];
+        if (this.currentQuestion >= level.questions.length) {
+            this.currentLevel++;
+            this.currentQuestion = 0;
+            if (this.currentLevel >= this.data.levels.length) {
+                this.endGame();
+                return;
+            }
+        }
+
+        const question = this.data.levels[this.currentLevel].questions[this.currentQuestion];
 
         this.container.innerHTML = `
             <div class="slide active">
-                <div class="level-indicator">${level.name}</div>
+                <div class="level-indicator">${this.data.levels[this.currentLevel].name}</div>
                 <div class="score-board">Score: ${this.score}</div>
                 <div class="question">${question.text}</div>
                 <div class="timer-bar">
@@ -58,17 +73,73 @@ class QuizGame {
                 </div>
             </div>
         `;
+    }
 
-        this.startTimer();
+    renderLifelines() {
+        return `
+            ${this.lifelines.fifty ? 
+                `<div class="lifeline" onclick="game.useFiftyFifty()">50:50</div>` : 
+                `<div class="lifeline used">50:50</div>`}
+            ${this.lifelines.skip ? 
+                `<div class="lifeline" onclick="game.useSkip()">Skip</div>` : 
+                `<div class="lifeline used">Skip</div>`}
+            ${this.lifelines.hint ? 
+                `<div class="lifeline" onclick="game.useHint()">Hint</div>` : 
+                `<div class="lifeline used">Hint</div>`}
+        `;
+    }
+
+    renderPrizeLevels() {
+        return this.data.levels.map((level, index) => `
+            <div class="${index === this.currentLevel ? 'level-reached' : ''}">
+                Level ${index + 1}: ${level.points} Points
+            </div>
+        `).reverse().join('');
+    }
+
+    selectOption(index) {
+        clearInterval(this.timer);
+        const options = document.querySelectorAll('.option');
+        const currentQuestion = this.data.levels[this.currentLevel].questions[this.currentQuestion];
+        
+        options[index].classList.add('selected');
+        
+        setTimeout(() => {
+            if (index === currentQuestion.correct) {
+                options[index].classList.add('correct');
+                this.score += this.data.levels[this.currentLevel].points;
+                this.showFeedback('Correct! ' + currentQuestion.explanation, true);
+            } else {
+                options[index].classList.add('incorrect');
+                options[currentQuestion.correct].classList.add('correct');
+                this.showFeedback('Incorrect. ' + currentQuestion.explanation, false);
+            }
+            
+            setTimeout(() => {
+                this.currentQuestion++;
+                this.renderQuestion();
+                this.startTimer();
+            }, 3000);
+        }, 500);
+    }
+
+    showFeedback(message, isCorrect) {
+        const feedback = document.getElementById('feedback');
+        feedback.textContent = message;
+        feedback.className = `feedback show ${isCorrect ? 'correct' : 'incorrect'}`;
+        
+        setTimeout(() => {
+            feedback.className = 'feedback';
+        }, 3000);
     }
 
     startTimer() {
         if (this.timer) clearInterval(this.timer);
         
         const progressBar = document.querySelector('.timer-progress');
-        let timeLeft = this.timeLimit;
+        if (!progressBar) return;
         
-        progressBar.style.width = '100%';
+        let timeLeft = this.timeLimit;
         
         this.timer = setInterval(() => {
             timeLeft--;
@@ -82,34 +153,61 @@ class QuizGame {
         }, 1000);
     }
 
-    selectOption(index) {
-        const options = document.querySelectorAll('.option');
+    timeUp() {
         const currentQuestion = this.data.levels[this.currentLevel].questions[this.currentQuestion];
-        
-        clearInterval(this.timer);
-        
-        options.forEach(option => option.classList.remove('selected'));
-        options[index].classList.add('selected');
-        
-        if (index === currentQuestion.correct) {
-            options[index].classList.add('correct');
-            this.score += this.data.levels[this.currentLevel].points;
-            this.showFeedback('Correct! ' + currentQuestion.explanation, true);
-        } else {
-            options[index].classList.add('incorrect');
-            options[currentQuestion.correct].classList.add('correct');
-            this.showFeedback('Incorrect. ' + currentQuestion.explanation, false);
-        }
-        
-        setTimeout(() => this.nextQuestion(), 3000);
-    }
-
-    showFeedback(message, isCorrect) {
-        const feedback = document.createElement('div');
-        feedback.className = `feedback ${isCorrect ? 'correct' : 'incorrect'}`;
-        feedback.textContent = message;
-        document.body.appendChild(feedback);
+        this.showFeedback('Time\'s up! ' + currentQuestion.explanation, false);
         
         setTimeout(() => {
-            feedback.remove();
+            this.currentQuestion++;
+            this.renderQuestion();
+            this.startTimer();
         }, 3000);
+    }
+
+    useFiftyFifty() {
+        if (!this.lifelines.fifty) return;
+        
+        const currentQuestion = this.data.levels[this.currentLevel].questions[this.currentQuestion];
+        const options = document.querySelectorAll('.option');
+        const incorrectIndexes = [...Array(options.length).keys()]
+            .filter(i => i !== currentQuestion.correct)
+            .sort(() => Math.random() - 0.5)
+            .slice(0, 2);
+        
+        incorrectIndexes.forEach(index => {
+            options[index].style.visibility = 'hidden';
+        });
+        
+        this.lifelines.fifty = false;
+        this.renderLifelines();
+    }
+
+    useSkip() {
+        if (!this.lifelines.skip) return;
+        
+        this.lifelines.skip = false;
+        this.currentQuestion++;
+        this.renderQuestion();
+        this.startTimer();
+    }
+
+    useHint() {
+        if (!this.lifelines.hint) return;
+        
+        const currentQuestion = this.data.levels[this.currentLevel].questions[this.currentQuestion];
+        this.showFeedback('Hint: ' + currentQuestion.explanation, true);
+        
+        this.lifelines.hint = false;
+        this.renderLifelines();
+    }
+
+    endGame() {
+        this.container.innerHTML = `
+            <div class="slide active">
+                <h1 class="title">Game Complete!</h1>
+                <h2 class="subtitle">Final Score: ${this.score}</h2>
+                <button class="control-btn" onclick="location.reload()">Play Again</button>
+            </div>
+        `;
+    }
+}
