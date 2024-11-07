@@ -2,11 +2,9 @@ import { Confetti } from './confetti.js';
 
 // game.js
 export default class QuizGame {
-    constructor(container, data) {
+    constructor(container) {
         this.container = container;
-        this.data = data;
-        this.currentLevel = 0;
-        this.currentQuestion = 0;
+        this.protection = new QuizProtection();
         this.score = 0;
         this.lifelines = {
             fifty: true,
@@ -33,12 +31,10 @@ export default class QuizGame {
     }
 
     startGame() {
-        this.currentLevel = 0;
-        this.currentQuestion = 0;
         this.score = 0;
         this.renderQuestion();
     }
-
+    
     renderLifelines() {
         return `
             <div class="lifeline ${this.lifelines.fifty ? '' : 'used'}" 
@@ -67,66 +63,44 @@ export default class QuizGame {
         `).reverse().join('');
     }
     
-    async renderQuestion() {
-        try {
-            // First check if game is complete
-            if (this.currentLevel >= this.data.levels.length) {
-                this.endGame();
-                return;
-            }
-    
-            let currentLevelData = this.data.levels[this.currentLevel];
-            
-            // Check if we need to move to next level
-            if (this.currentQuestion >= currentLevelData.questions.length) {
-                await this.celebrateLevel();
-                this.currentLevel++;
-                this.currentQuestion = 0;
-                
-                // Check if game is complete after level increment
-                if (this.currentLevel >= this.data.levels.length) {
-                    this.endGame();
-                    return;
-                }
-                
-                currentLevelData = this.data.levels[this.currentLevel];
-            }
-    
-            const question = currentLevelData.questions[this.currentQuestion];
-    
-            this.container.innerHTML = `
-                <div class="slide active">
-                    <div class="level-indicator">${currentLevelData.name}</div>
-                    <div class="score-board">Score: ${this.score}</div>
-                    
-                    <div class="question">${question.text}</div>
-                    
-                    <div class="timer-bar">
-                        <div class="timer-progress" style="width: 100%"></div>
-                    </div>
-    
-                    <div class="options">
-                        ${question.options.map((option, index) => `
-                            <div class="option" onclick="game.selectOption(${index})">${option}</div>
-                        `).join('')}
-                    </div>
-    
-                    <div class="lifelines">
-                        ${this.renderLifelines()}
-                    </div>
-    
-                    <div class="prize-levels">
-                        ${this.renderPrizeLevels()}
-                    </div>
-                </div>
-            `;
-    
-            this.startTimer();
-        } catch (error) {
-            console.error('Error rendering question:', error);
+    renderQuestion() {
+        const question = this.protection.getCurrentQuestion();
+        if (!question) {
             this.endGame();
+            return;
         }
+
+        // Your existing question rendering code, but using the protected question data
+        this.container.innerHTML = `
+            <div class="slide active">
+                <div class="level-indicator">${question.level}</div>
+                <div class="score-board">Score: ${this.score}</div>
+                
+                <div class="question">${question.text}</div>
+                
+                <div class="timer-bar">
+                    <div class="timer-progress" style="width: 100%"></div>
+                </div>
+
+                <div class="options">
+                    ${question.options.map((option, index) => `
+                        <div class="option" onclick="game.selectOption('${question.id}', ${index})">${option}</div>
+                    `).join('')}
+                </div>
+
+                <div class="lifelines">
+                    ${this.renderLifelines()}
+                </div>
+
+                <div class="prize-levels">
+                    ${this.renderPrizeLevels()}
+                </div>
+            </div>
+        `;
+
+        this.startTimer();
     }
+
 
     selectOption(index) {
         if (this.timer) {
