@@ -3,6 +3,7 @@ import { protectedQuizData, decryptQuestion, verifyAnswer } from './protected-da
 import { Confetti } from './confetti.js';
 
 export default class QuizGame {
+    
     constructor(container) {
         this.container = container;
         this.currentLevel = 0;
@@ -20,26 +21,22 @@ export default class QuizGame {
     }
 
     init() {
-        try {
-            // Verify that quiz data is loaded
-            if (!protectedQuizData || !protectedQuizData.levels) {
-                throw new Error('Quiz data not properly loaded');
-            }
-            this.renderWelcomeScreen();
-        } catch (error) {
-            console.error('Failed to initialize quiz:', error);
-            this.renderError();
-        }
+        this.renderWelcomeScreen();
     }
-
+    
     renderWelcomeScreen() {
         this.container.innerHTML = `
             <div class="slide active">
                 <h1 class="title">The Ultimate UX Challenge</h1>
                 <h2 class="subtitle">"Who Wants to Be a UX Expert?"</h2>
-                <button class="control-btn" onclick="game.startGame()">Start Game</button>
+                <button class="control-btn" id="start-game-btn">Start Game</button>
             </div>
         `;
+        
+        // Add event listener with proper binding
+        document.getElementById('start-game-btn').addEventListener('click', () => {
+            this.startGame();
+        });
     }
 
     renderError() {
@@ -64,72 +61,21 @@ export default class QuizGame {
         };
         this.renderQuestion();
     }
-
-    renderQuestion() {
-        const level = protectedQuizData.levels[this.currentLevel];
-        if (!level) {
-            this.endGame();
-            return;
-        }
-
-        const encryptedQuestion = level.questions[this.currentQuestion];
-        const questionId = `${this.currentLevel}-${this.currentQuestion}`;
-        
-        if (this.answeredQuestions.has(questionId)) {
-            this.nextQuestion();
-            return;
-        }
-
-        const question = decryptQuestion(encryptedQuestion);
-        if (!question) {
-            this.renderError();
-            return;
-        }
-
-        this.container.innerHTML = `
-            <div class="slide active">
-                <div class="level-indicator">${level.name}</div>
-                <div class="score-board">Score: ${this.score}</div>
-                
-                <div class="question">${question.text}</div>
-                
-                <div class="timer-bar">
-                    <div class="timer-progress" style="width: 100%"></div>
-                </div>
-
-                <div class="options">
-                    ${question.options.map((option, index) => `
-                        <div class="option" onclick="game.selectOption('${questionId}', ${index})">${option}</div>
-                    `).join('')}
-                </div>
-
-                <div class="lifelines">
-                    ${this.renderLifelines()}
-                </div>
-
-                <div class="prize-levels">
-                    ${this.renderPrizeLevels()}
-                </div>
-            </div>
-        `;
-
-        this.startTimer();
-    }
-
+    
     renderLifelines() {
         return `
             <div class="lifeline ${this.lifelines.fifty ? '' : 'used'}" 
-                 onclick="${this.lifelines.fifty ? 'game.useFiftyFifty()' : ''}"
+                 data-lifeline="fifty"
                  style="${this.lifelines.fifty ? '' : 'cursor: not-allowed;'}">
                 50:50
             </div>
             <div class="lifeline ${this.lifelines.skip ? '' : 'used'}"
-                 onclick="${this.lifelines.skip ? 'game.useSkip()' : ''}"
+                 data-lifeline="skip"
                  style="${this.lifelines.skip ? '' : 'cursor: not-allowed;'}">
                 Skip
             </div>
             <div class="lifeline ${this.lifelines.hint ? '' : 'used'}"
-                 onclick="${this.lifelines.hint ? 'game.useHint()' : ''}"
+                 data-lifeline="hint"
                  style="${this.lifelines.hint ? '' : 'cursor: not-allowed;'}">
                 Hint
             </div>
@@ -143,40 +89,148 @@ export default class QuizGame {
             </div>
         `).reverse().join('');
     }
+    
+    async renderQuestion() {
+        try {
+            // First check if game is complete
+            if (this.currentLevel >= protectedQuizData.levels.length) {
+                this.endGame();
+                return;
+            }
+    
+            let currentLevelData = protectedQuizData.levels[this.currentLevel];
+            
+            // Check if we need to move to next level
+            if (this.currentQuestion >= currentLevelData.questions.length) {
+                await this.celebrateLevel();
+                this.currentLevel++;
+                this.currentQuestion = 0;
+                
+                // Check if game is complete after level increment
+                if (this.currentLevel >= protectedQuizData.levels.length) {
+                    this.endGame();
+                    return;
+                }
+                
+                currentLevelData = protectedQuizData.levels[this.currentLevel];
+            }
+    
+            const questionId = `${this.currentLevel}-${this.currentQuestion}`;
+            const encryptedQuestion = currentLevelData.questions[this.currentQuestion];
+            const question = decryptQuestion(encryptedQuestion);
 
-    selectOption(questionId, selectedAnswer) {
+            if (!question) {
+                console.error('Failed to decrypt question');
+                this.endGame();
+                return;
+            }
+    
+            this.container.innerHTML = `
+                <div class="slide active">
+                    <div class="level-indicator">${currentLevelData.name}</div>
+                    <div class="score-board">Score: ${this.score}</div>
+                    
+                    <div class="question">${question.text}</div>
+                    
+                    <div class="timer-bar">
+                        <div class="timer-progress" style="width: 100%"></div>
+                    </div>
+    
+                    <div class="options">
+                        ${question.options.map((option, index) => `
+                            <div class="option" data-index="${index}">${option}</div>
+                        `).join('')}
+                    </div>
+    
+                    <div class="lifelines">
+                        ${this.renderLifelines()}
+                    </div>
+    
+                    <div class="prize-levels">
+                        ${this.renderPrizeLevels()}
+                    </div>
+                </div>
+            `;
+    
+            this.addEventListeners(questionId);
+            this.startTimer();
+        } catch (error) {
+            console.error('Error rendering question:', error);
+            this.endGame();
+        }
+    }
+
+    addEventListeners(questionId) {
+        // Add option click listeners
+        const options = this.container.querySelectorAll('.option');
+        options.forEach(option => {
+            option.addEventListener('click', () => {
+                const index = parseInt(option.dataset.index);
+                this.selectOption(questionId, index);
+            });
+        });
+
+        // Add lifeline click listeners
+        const lifelines = this.container.querySelectorAll('.lifeline');
+        lifelines.forEach(lifeline => {
+            lifeline.addEventListener('click', () => {
+                const type = lifeline.dataset.lifeline;
+                if (this.lifelines[type]) {
+                    switch(type) {
+                        case 'fifty':
+                            this.useFiftyFifty();
+                            break;
+                        case 'skip':
+                            this.useSkip();
+                            break;
+                        case 'hint':
+                            this.useHint();
+                            break;
+                    }
+                }
+            });
+        });
+    }
+    
+    selectOption(questionId, index) {
         if (this.timer) {
             clearInterval(this.timer);
         }
 
         if (this.answeredQuestions.has(questionId)) return;
 
-        const [levelIdx, questionIdx] = questionId.split('-').map(Number);
-        const encryptedQuestion = protectedQuizData.levels[levelIdx]?.questions[questionIdx];
-        
-        const result = verifyAnswer(encryptedQuestion, selectedAnswer);
-        this.answeredQuestions.add(questionId);
-
         const options = document.querySelectorAll('.option');
-        options.forEach(option => option.style.pointerEvents = 'none');
-        options[selectedAnswer].classList.add('selected');
+        const [levelIdx, questionIdx] = questionId.split('-').map(Number);
+        const encryptedQuestion = protectedQuizData.levels[levelIdx].questions[questionIdx];
+
+        // Disable all options
+        options.forEach(option => {
+            option.style.pointerEvents = 'none';
+        });
+
+        // Show selection
+        options[index].classList.add('selected');
+
+        const result = verifyAnswer(encryptedQuestion, index);
+        this.answeredQuestions.add(questionId);
 
         setTimeout(() => {
             if (result.correct) {
-                options[selectedAnswer].classList.add('correct');
+                options[index].classList.add('correct');
                 this.score += protectedQuizData.levels[levelIdx].points;
                 this.showFeedback('Correct! ' + result.explanation, true);
-                if (result.levelComplete) {
-                    this.celebrateLevel();
-                }
             } else {
-                options[selectedAnswer].classList.add('incorrect');
-                options[result.correctAnswer].classList.add('correct');
+                options[index].classList.add('incorrect');
+                const question = decryptQuestion(encryptedQuestion);
+                if (question) {
+                    options[question.correct].classList.add('correct');
+                }
                 this.showFeedback('Incorrect. ' + result.explanation, false);
             }
 
             setTimeout(() => {
-                this.nextQuestion();
+                this.currentQuestion++;
+                this.renderQuestion();
             }, 2000);
         }, 500);
     }
