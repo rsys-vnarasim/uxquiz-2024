@@ -1,3 +1,4 @@
+// game.js
 import { protectedQuizData, decryptQuestion, verifyAnswer } from './protected-data.js';
 import { Confetti } from './confetti.js';
 
@@ -18,56 +19,103 @@ export default class QuizGame {
         this.answeredQuestions = new Set();
     }
 
-    getCurrentQuestion() {
-        const level = protectedQuizData.levels[this.currentLevel];
-        if (!level) return null;
-
-        const encryptedQuestion = level.questions[this.currentQuestion];
-        if (!encryptedQuestion) return null;
-
-        const questionId = `${this.currentLevel}-${this.currentQuestion}`;
-        if (this.answeredQuestions.has(questionId)) return null;
-
-        const question = decryptQuestion(encryptedQuestion);
-        if (!question) return null;
-
-        return {
-            ...question,
-            id: questionId,
-            level: level.name,
-            points: level.points
-        };
+    init() {
+        try {
+            // Verify that quiz data is loaded
+            if (!protectedQuizData || !protectedQuizData.levels) {
+                throw new Error('Quiz data not properly loaded');
+            }
+            this.renderWelcomeScreen();
+        } catch (error) {
+            console.error('Failed to initialize quiz:', error);
+            this.renderError();
+        }
     }
 
-    selectOption(questionId, selectedAnswer) {
-        if (this.timer) {
-            clearInterval(this.timer);
-        }
-
-        if (this.answeredQuestions.has(questionId)) return;
-
-        const [levelIdx, questionIdx] = questionId.split('-').map(Number);
-        const encryptedQuestion = protectedQuizData.levels[levelIdx]?.questions[questionIdx];
-        
-        const result = verifyAnswer(encryptedQuestion, selectedAnswer);
-        this.answeredQuestions.add(questionId);
-
-        if (result.correct) {
-            this.score += protectedQuizData.levels[levelIdx].points;
-        }
-
-        this.showFeedback(result.correct ? 'Correct! ' + result.explanation : 'Incorrect. ' + result.explanation, result.correct);
-
-        setTimeout(() => {
-            this.nextQuestion();
-        }, 2000);
+    renderWelcomeScreen() {
+        this.container.innerHTML = `
+            <div class="slide active">
+                <h1 class="title">The Ultimate UX Challenge</h1>
+                <h2 class="subtitle">"Who Wants to Be a UX Expert?"</h2>
+                <button class="control-btn" onclick="game.startGame()">Start Game</button>
+            </div>
+        `;
     }
-    
+
+    renderError() {
+        this.container.innerHTML = `
+            <div class="slide active">
+                <h1 class="title">Oops!</h1>
+                <h2 class="subtitle">Something went wrong loading the quiz.</h2>
+                <button class="control-btn" onclick="location.reload()">Try Again</button>
+            </div>
+        `;
+    }
+
     startGame() {
+        this.currentLevel = 0;
+        this.currentQuestion = 0;
         this.score = 0;
+        this.answeredQuestions.clear();
+        this.lifelines = {
+            fifty: true,
+            skip: true,
+            hint: true
+        };
         this.renderQuestion();
     }
-    
+
+    renderQuestion() {
+        const level = protectedQuizData.levels[this.currentLevel];
+        if (!level) {
+            this.endGame();
+            return;
+        }
+
+        const encryptedQuestion = level.questions[this.currentQuestion];
+        const questionId = `${this.currentLevel}-${this.currentQuestion}`;
+        
+        if (this.answeredQuestions.has(questionId)) {
+            this.nextQuestion();
+            return;
+        }
+
+        const question = decryptQuestion(encryptedQuestion);
+        if (!question) {
+            this.renderError();
+            return;
+        }
+
+        this.container.innerHTML = `
+            <div class="slide active">
+                <div class="level-indicator">${level.name}</div>
+                <div class="score-board">Score: ${this.score}</div>
+                
+                <div class="question">${question.text}</div>
+                
+                <div class="timer-bar">
+                    <div class="timer-progress" style="width: 100%"></div>
+                </div>
+
+                <div class="options">
+                    ${question.options.map((option, index) => `
+                        <div class="option" onclick="game.selectOption('${questionId}', ${index})">${option}</div>
+                    `).join('')}
+                </div>
+
+                <div class="lifelines">
+                    ${this.renderLifelines()}
+                </div>
+
+                <div class="prize-levels">
+                    ${this.renderPrizeLevels()}
+                </div>
+            </div>
+        `;
+
+        this.startTimer();
+    }
+
     renderLifelines() {
         return `
             <div class="lifeline ${this.lifelines.fifty ? '' : 'used'}" 
@@ -89,84 +137,61 @@ export default class QuizGame {
     }
 
     renderPrizeLevels() {
-        return this.data.levels.map((level, index) => `
+        return protectedQuizData.levels.map((level, index) => `
             <div class="${index === this.currentLevel ? 'level-reached' : ''}">
                 ${level.name}: ${level.points} Points
             </div>
         `).reverse().join('');
     }
-    
-    renderQuestion() {
-        const question = this.protection.getCurrentQuestion();
-        if (!question) {
-            this.endGame();
-            return;
-        }
 
-        // Your existing question rendering code, but using the protected question data
-        this.container.innerHTML = `
-            <div class="slide active">
-                <div class="level-indicator">${question.level}</div>
-                <div class="score-board">Score: ${this.score}</div>
-                
-                <div class="question">${question.text}</div>
-                
-                <div class="timer-bar">
-                    <div class="timer-progress" style="width: 100%"></div>
-                </div>
-
-                <div class="options">
-                    ${question.options.map((option, index) => `
-                        <div class="option" onclick="game.selectOption('${question.id}', ${index})">${option}</div>
-                    `).join('')}
-                </div>
-
-                <div class="lifelines">
-                    ${this.renderLifelines()}
-                </div>
-
-                <div class="prize-levels">
-                    ${this.renderPrizeLevels()}
-                </div>
-            </div>
-        `;
-
-        this.startTimer();
-    }
-
-
-    selectOption(index) {
+    selectOption(questionId, selectedAnswer) {
         if (this.timer) {
             clearInterval(this.timer);
         }
 
+        if (this.answeredQuestions.has(questionId)) return;
+
+        const [levelIdx, questionIdx] = questionId.split('-').map(Number);
+        const encryptedQuestion = protectedQuizData.levels[levelIdx]?.questions[questionIdx];
+        
+        const result = verifyAnswer(encryptedQuestion, selectedAnswer);
+        this.answeredQuestions.add(questionId);
+
         const options = document.querySelectorAll('.option');
-        const currentQuestion = this.data.levels[this.currentLevel].questions[this.currentQuestion];
-
-        // Disable all options
-        options.forEach(option => {
-            option.style.pointerEvents = 'none';
-        });
-
-        // Show selection
-        options[index].classList.add('selected');
+        options.forEach(option => option.style.pointerEvents = 'none');
+        options[selectedAnswer].classList.add('selected');
 
         setTimeout(() => {
-            if (index === currentQuestion.correct) {
-                options[index].classList.add('correct');
-                this.score += this.data.levels[this.currentLevel].points;
-                this.showFeedback('Correct! ' + currentQuestion.explanation, true);
+            if (result.correct) {
+                options[selectedAnswer].classList.add('correct');
+                this.score += protectedQuizData.levels[levelIdx].points;
+                this.showFeedback('Correct! ' + result.explanation, true);
+                if (result.levelComplete) {
+                    this.celebrateLevel();
+                }
             } else {
-                options[index].classList.add('incorrect');
-                options[currentQuestion.correct].classList.add('correct');
-                this.showFeedback('Incorrect. ' + currentQuestion.explanation, false);
+                options[selectedAnswer].classList.add('incorrect');
+                options[result.correctAnswer].classList.add('correct');
+                this.showFeedback('Incorrect. ' + result.explanation, false);
             }
 
             setTimeout(() => {
-                this.currentQuestion++;
-                this.renderQuestion();
+                this.nextQuestion();
             }, 2000);
         }, 500);
+    }
+
+    nextQuestion() {
+        if (this.currentQuestion + 1 < protectedQuizData.levels[this.currentLevel].questions.length) {
+            this.currentQuestion++;
+        } else if (this.currentLevel + 1 < protectedQuizData.levels.length) {
+            this.currentLevel++;
+            this.currentQuestion = 0;
+        } else {
+            this.endGame();
+            return;
+        }
+        this.renderQuestion();
     }
 
     showFeedback(message, isCorrect) {
@@ -203,25 +228,62 @@ export default class QuizGame {
     }
 
     timeUp() {
-        const currentQuestion = this.data.levels[this.currentLevel].questions[this.currentQuestion];
-        this.showFeedback('Time\'s up! ' + currentQuestion.explanation, false);
-
+        this.showFeedback('Time\'s up!', false);
         setTimeout(() => {
-            this.currentQuestion++;
-            this.renderQuestion();
+            this.nextQuestion();
         }, 2000);
     }
 
+    async celebrateLevel() {
+        this.confetti.celebrate();
+        const levelCompleteDiv = document.createElement('div');
+        levelCompleteDiv.className = 'level-complete';
+        levelCompleteDiv.innerHTML = `
+            <h2>Level ${this.currentLevel + 1} Complete!</h2>
+            <p>Moving to next level...</p>
+        `;
+        this.container.appendChild(levelCompleteDiv);
+        
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        levelCompleteDiv.remove();
+    }
+
+    endGame() {
+        const maxScore = protectedQuizData.levels.reduce((sum, level) => 
+            sum + (level.points * level.questions.length), 0);
+        const percentage = (this.score / maxScore) * 100;
+
+        let feedback;
+        if (percentage >= 90) feedback = "UX Master! Exceptional understanding of user experience principles!";
+        else if (percentage >= 70) feedback = "UX Professional! Great knowledge of UX concepts!";
+        else if (percentage >= 50) feedback = "UX Enthusiast! Good foundation in UX principles!";
+        else feedback = "UX Learner! Keep studying and practicing!";
+
+        this.container.innerHTML = `
+            <div class="slide active">
+                <h1 class="title">Game Complete!</h1>
+                <h2 class="subtitle">Final Score: ${this.score}</h2>
+                <div class="feedback">
+                    ${feedback}
+                </div>
+                <button class="control-btn" onclick="location.reload()">Play Again</button>
+            </div>
+        `;
+    }
+
+    // Lifeline methods
     useFiftyFifty() {
         if (!this.lifelines.fifty) return;
 
-        const currentQuestion = this.data.levels[this.currentLevel].questions[this.currentQuestion];
+        const question = decryptQuestion(
+            protectedQuizData.levels[this.currentLevel].questions[this.currentQuestion]
+        );
+        if (!question) return;
+
         const options = document.querySelectorAll('.option');
-        
-        // Get indexes of wrong answers
         const wrongAnswers = Array.from(options)
             .map((_, index) => index)
-            .filter(index => index !== currentQuestion.correct);
+            .filter(index => index !== question.correct);
         
         // Randomly remove two wrong answers
         for (let i = 0; i < 2; i++) {
@@ -231,66 +293,20 @@ export default class QuizGame {
         }
 
         this.lifelines.fifty = false;
-        this.renderLifelines();
+        document.querySelector('.lifelines').innerHTML = this.renderLifelines();
     }
 
     useSkip() {
         if (!this.lifelines.skip) return;
-
         this.lifelines.skip = false;
-        this.currentQuestion++;
-        this.renderQuestion();
+        document.querySelector('.lifelines').innerHTML = this.renderLifelines();
+        this.nextQuestion();
     }
 
     useHint() {
         if (!this.lifelines.hint) return;
-
-        const currentQuestion = this.data.levels[this.currentLevel].questions[this.currentQuestion];
-        this.showFeedback('Hint: Consider the user experience principles!', true);
-        
+        this.showFeedback('Consider the user experience principles!', true);
         this.lifelines.hint = false;
-        this.renderLifelines();
-    }
-
-    endGame() {
-        this.container.innerHTML = `
-            <div class="slide active">
-                <h1 class="title">Game Complete!</h1>
-                <h2 class="subtitle">Final Score: ${this.score}</h2>
-                <div class="feedback">
-                    ${this.getFinalFeedback()}
-                </div>
-                <button class="control-btn" onclick="location.reload()">Play Again</button>
-            </div>
-        `;
-    }
-
-    getFinalFeedback() {
-        const maxScore = this.data.levels.reduce((sum, level) => 
-            sum + (level.points * level.questions.length), 0);
-        const percentage = (this.score / maxScore) * 100;
-
-        if (percentage >= 90) return "UX Master! Exceptional understanding of user experience principles!";
-        if (percentage >= 70) return "UX Professional! Great knowledge of UX concepts!";
-        if (percentage >= 50) return "UX Enthusiast! Good foundation in UX principles!";
-        return "UX Learner! Keep studying and practicing!";
-    }
-
-    async celebrateLevel() {
-        const levelCompleteDiv = document.createElement('div');
-        levelCompleteDiv.className = 'level-complete';
-        levelCompleteDiv.innerHTML = `
-            <h2>Level ${this.currentLevel + 1} Complete!</h2>
-            <p>Moving to next level...</p>
-        `;
-        this.container.appendChild(levelCompleteDiv);
-    
-        // Trigger confetti
-        this.confetti.celebrate();
-    
-        // Wait for animation
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        levelCompleteDiv.remove();
+        document.querySelector('.lifelines').innerHTML = this.renderLifelines();
     }
 }
