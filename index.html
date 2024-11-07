@@ -3,40 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UX Quiz Game</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>UX Quiz</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Add obfuscation meta tags -->
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="referrer" content="no-referrer">
 </head>
 <body>
     <div id="game-container">
         <div class="slide active">
-            <h1 class="title">Loading UX Quiz...</h1>
+            <h1 class="title" id="loading-ux-quiz">Loading UX Quiz...</h1>
             <div class="subtitle">Please wait</div>
         </div>
     </div>
-
     <div id="feedback" class="feedback"></div>
 
+    <!-- Note: Load scripts in this specific order -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script type="module" src="js/protected-data.js"></script>
+    <script type="module" src="js/quiz-protection.js"></script>
+    <script type="module" src="js/confetti.js"></script>
+    <script type="module" src="js/game.js"></script>
     <script type="module">
-        // Initialize game when DOM is loaded
-        document.addEventListener('DOMContentLoaded', async () => {
-            try {
-                const { default: Game } = await import('./js/game.js');
-                const { default: quizData } = await import('./js/questions.js');
-                
-                window.game = new Game(
-                    document.getElementById('game-container'),
-                    quizData
-                );
-                game.init();
-            } catch (error) {
-                console.error('Failed to initialize game:', error);
-                document.getElementById('game-container').innerHTML = `
-                    <div class="slide active">
-                        <h1 class="title">Error Loading Game</h1>
-                        <div class="subtitle">Please check console for details</div>
-                    </div>
-                `;
-            }
+        import QuizGame from './js/game.js';
+        window.addEventListener('DOMContentLoaded', () => {
+            // Prevent right-click
+            document.addEventListener('contextmenu', e => e.preventDefault());
+            
+            // Prevent keyboard shortcuts
+            document.addEventListener('keydown', e => {
+                if ((e.ctrlKey || e.metaKey) && 
+                    (e.key === 'u' || e.key === 's' || e.key === 'i')) {
+                    e.preventDefault();
+                }
+            });
+
+            // Initialize game
+            window.game = new QuizGame(document.getElementById('game-container'));
+            window.game.init();
         });
     </script>
 </body>
