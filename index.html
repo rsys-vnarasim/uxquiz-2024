@@ -21,10 +21,10 @@
         <script type="module">
         async function initGame() {
             try {
-                const gameModule = await import('./js/game.js');
+                const { default: Game } = await import('./js/game.js');
                 const { default: quizData } = await import('./js/questions.js');
                 
-                window.game = new gameModule.default(
+                window.game = new Game(
                     document.getElementById('game-container'),
                     quizData
                 );
