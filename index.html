@@ -4,22 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UX Quiz Game</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="./css/styles.css">
 </head>
 <body>
     <div id="game-container">
-        <!-- Initial loading state -->
         <div class="slide active">
             <h1 class="title">Loading UX Quiz...</h1>
             <div class="subtitle">Please wait</div>
         </div>
     </div>
 
-    <!-- Feedback container for showing correct/incorrect messages -->
     <div id="feedback" class="feedback"></div>
 
-        <script type="module">
-        async function initGame() {
+    <script type="module">
+        // Initialize game when DOM is loaded
+        document.addEventListener('DOMContentLoaded', async () => {
             try {
                 const { default: Game } = await import('./js/game.js');
                 const { default: quizData } = await import('./js/questions.js');
@@ -38,26 +37,7 @@
                     </div>
                 `;
             }
-        }
-    
-        window.addEventListener('load', initGame);
+        });
     </script>
-
-    <!-- Error handling for older browsers -->
-    <script nomodule>
-        document.getElementById('game-container').innerHTML = `
-            <div class="slide active">
-                <h1 class="title">Browser Not Supported</h1>
-                <div class="subtitle">Please use a modern browser to play this game</div>
-            </div>
-        `;
-    </script>
-
-    <noscript>
-        <div class="slide active">
-            <h1 class="title">JavaScript Required</h1>
-            <div class="subtitle">Please enable JavaScript to play this game</div>
-        </div>
-    </noscript>
 </body>
 </html>
