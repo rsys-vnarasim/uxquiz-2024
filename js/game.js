@@ -1,10 +1,11 @@
+import { protectedQuizData, decryptQuestion, verifyAnswer } from './protected-data.js';
 import { Confetti } from './confetti.js';
 
-// game.js
 export default class QuizGame {
     constructor(container) {
         this.container = container;
-        this.protection = new QuizProtection();
+        this.currentLevel = 0;
+        this.currentQuestion = 0;
         this.score = 0;
         this.lifelines = {
             fifty: true,
@@ -14,22 +15,54 @@ export default class QuizGame {
         this.timer = null;
         this.timeLimit = 30;
         this.confetti = new Confetti();
+        this.answeredQuestions = new Set();
     }
 
-    init() {
-        this.renderWelcomeScreen();
+    getCurrentQuestion() {
+        const level = protectedQuizData.levels[this.currentLevel];
+        if (!level) return null;
+
+        const encryptedQuestion = level.questions[this.currentQuestion];
+        if (!encryptedQuestion) return null;
+
+        const questionId = `${this.currentLevel}-${this.currentQuestion}`;
+        if (this.answeredQuestions.has(questionId)) return null;
+
+        const question = decryptQuestion(encryptedQuestion);
+        if (!question) return null;
+
+        return {
+            ...question,
+            id: questionId,
+            level: level.name,
+            points: level.points
+        };
     }
 
-    renderWelcomeScreen() {
-        this.container.innerHTML = `
-            <div class="slide active">
-                <h1 class="title">The Ultimate UX Challenge</h1>
-                <h2 class="subtitle">"Who Wants to Be a UX Expert?"</h2>
-                <button class="control-btn" onclick="game.startGame()">Start Game</button>
-            </div>
-        `;
-    }
+    selectOption(questionId, selectedAnswer) {
+        if (this.timer) {
+            clearInterval(this.timer);
+        }
 
+        if (this.answeredQuestions.has(questionId)) return;
+
+        const [levelIdx, questionIdx] = questionId.split('-').map(Number);
+        const encryptedQuestion = protectedQuizData.levels[levelIdx]?.questions[questionIdx];
+        
+        const result = verifyAnswer(encryptedQuestion, selectedAnswer);
+        this.answeredQuestions.add(questionId);
+
+        if (result.correct) {
+            this.score += protectedQuizData.levels[levelIdx].points;
+        }
+
+        this.showFeedback(result.correct ? 'Correct! ' + result.explanation : 'Incorrect. ' + result.explanation, result.correct);
+
+        setTimeout(() => {
+            this.nextQuestion();
+        }, 2000);
+    }
+    
     startGame() {
         this.score = 0;
         this.renderQuestion();
