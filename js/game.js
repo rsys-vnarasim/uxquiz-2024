@@ -118,14 +118,15 @@ export default class QuizGame {
             const questionId = `${this.currentLevel}-${this.currentQuestion}`;
             const encryptedQuestion = currentLevelData.questions[this.currentQuestion];
             const question = decryptQuestion(encryptedQuestion);
-
+    
             if (!question) {
                 console.error('Failed to decrypt question');
                 this.endGame();
                 return;
             }
     
-            this.container.innerHTML = `
+            // Create the HTML string
+            const htmlContent = `
                 <div class="slide active">
                     <div class="level-indicator">${currentLevelData.name}</div>
                     <div class="score-board">Score: ${this.score}</div>
@@ -152,6 +153,13 @@ export default class QuizGame {
                 </div>
             `;
     
+            // Set the HTML content
+            this.container.innerHTML = htmlContent;
+    
+            // Wait for a microtask to ensure DOM is updated
+            await Promise.resolve();
+    
+            // Add event listeners
             this.addEventListeners(questionId);
             this.startTimer();
         } catch (error) {
@@ -161,78 +169,108 @@ export default class QuizGame {
     }
 
     addEventListeners(questionId) {
-        // Add option click listeners
-        const options = this.container.querySelectorAll('.option');
-        options.forEach(option => {
-            option.addEventListener('click', () => {
-                const index = parseInt(option.dataset.index);
-                this.selectOption(questionId, index);
-            });
-        });
-
-        // Add lifeline click listeners
-        const lifelines = this.container.querySelectorAll('.lifeline');
-        lifelines.forEach(lifeline => {
-            lifeline.addEventListener('click', () => {
-                const type = lifeline.dataset.lifeline;
-                if (this.lifelines[type]) {
-                    switch(type) {
-                        case 'fifty':
-                            this.useFiftyFifty();
-                            break;
-                        case 'skip':
-                            this.useSkip();
-                            break;
-                        case 'hint':
-                            this.useHint();
-                            break;
-                    }
-                }
-            });
-        });
-    }
+        try {
+            // Add option click listeners
+            const optionsContainer = this.container.querySelector('.options');
+            if (optionsContainer) {
+                const options = optionsContainer.querySelectorAll('.option');
+                options.forEach(option => {
+                    option.addEventListener('click', () => {
+                        const index = parseInt(option.dataset.index);
+                        if (!isNaN(index)) {
+                            this.selectOption(questionId, index);
+                        }
+                    });
+                });
+            }
     
-    selectOption(questionId, index) {
-        if (this.timer) {
-            clearInterval(this.timer);
+            // Add lifeline click listeners
+            const lifelinesContainer = this.container.querySelector('.lifelines');
+            if (lifelinesContainer) {
+                const lifelines = lifelinesContainer.querySelectorAll('.lifeline');
+                lifelines.forEach(lifeline => {
+                    lifeline.addEventListener('click', () => {
+                        const type = lifeline.dataset.lifeline;
+                        if (this.lifelines[type]) {
+                            switch(type) {
+                                case 'fifty':
+                                    this.useFiftyFifty();
+                                    break;
+                                case 'skip':
+                                    this.useSkip();
+                                    break;
+                                case 'hint':
+                                    this.useHint();
+                                    break;
+                            }
+                        }
+                    });
+                });
+            }
+        } catch (error) {
+            console.error('Error adding event listeners:', error);
         }
+    }    
+    
+    // Update the selectOption method in your game.js
 
-        if (this.answeredQuestions.has(questionId)) return;
-
-        const options = document.querySelectorAll('.option');
-        const [levelIdx, questionIdx] = questionId.split('-').map(Number);
-        const encryptedQuestion = protectedQuizData.levels[levelIdx].questions[questionIdx];
-
-        // Disable all options
-        options.forEach(option => {
-            option.style.pointerEvents = 'none';
-        });
-
-        // Show selection
-        options[index].classList.add('selected');
-
-        const result = verifyAnswer(encryptedQuestion, index);
-        this.answeredQuestions.add(questionId);
-
-        setTimeout(() => {
-            if (result.correct) {
-                options[index].classList.add('correct');
-                this.score += protectedQuizData.levels[levelIdx].points;
-                this.showFeedback('Correct! ' + result.explanation, true);
-            } else {
-                options[index].classList.add('incorrect');
-                const question = decryptQuestion(encryptedQuestion);
-                if (question) {
-                    options[question.correct].classList.add('correct');
-                }
-                this.showFeedback('Incorrect. ' + result.explanation, false);
+    selectOption(questionId, index) {
+        try {
+            if (this.timer) {
+                clearInterval(this.timer);
             }
 
+            if (this.answeredQuestions.has(questionId)) return;
+
+            const optionsContainer = this.container.querySelector('.options');
+            if (!optionsContainer) return;
+
+            const options = optionsContainer.querySelectorAll('.option');
+            if (!options.length) return;
+
+            const [levelIdx, questionIdx] = questionId.split('-').map(Number);
+            const encryptedQuestion = protectedQuizData.levels[levelIdx]?.questions[questionIdx];
+            if (!encryptedQuestion) return;
+
+            // Disable all options
+            options.forEach(option => {
+                if (option && option.style) {
+                    option.style.pointerEvents = 'none';
+                }
+            });
+
+            // Show selection
+            const selectedOption = options[index];
+            if (selectedOption && selectedOption.classList) {
+                selectedOption.classList.add('selected');
+            }
+
+            const result = verifyAnswer(encryptedQuestion, index);
+            this.answeredQuestions.add(questionId);
+
             setTimeout(() => {
-                this.currentQuestion++;
-                this.renderQuestion();
-            }, 2000);
-        }, 500);
+                if (result.correct) {
+                    selectedOption.classList.add('correct');
+                    this.score += protectedQuizData.levels[levelIdx].points;
+                    this.showFeedback('Correct! ' + result.explanation, true);
+                } else {
+                    selectedOption.classList.add('incorrect');
+                    const question = decryptQuestion(encryptedQuestion);
+                    if (question && options[question.correct]) {
+                        options[question.correct].classList.add('correct');
+                    }
+                    this.showFeedback('Incorrect. ' + result.explanation, false);
+                }
+
+                setTimeout(() => {
+                    this.currentQuestion++;
+                    this.renderQuestion();
+                }, 2000);
+            }, 500);
+        } catch (error) {
+            console.error('Error in selectOption:', error);
+            this.showFeedback('Something went wrong', false);
+        }
     }
 
     nextQuestion() {
