@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UX Quiz</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="style.css">
     <meta name="robots" content="noindex, nofollow">
 </head>
 <body>
@@ -20,6 +20,12 @@
     <script type="module">
         import QuizGame from './js/game.js';
         
+        // Make game globally accessible
+        const initGame = () => {
+            window.game = new QuizGame(document.getElementById('game-container'));
+            window.game.init();
+        };
+
         // Initialize game when DOM is loaded
         window.addEventListener('DOMContentLoaded', () => {
             // Prevent right-click
@@ -33,9 +39,7 @@
                 }
             });
 
-            // Initialize game
-            window.game = new QuizGame(document.getElementById('game-container'));
-            window.game.init();
+            initGame();
         });
     </script>
 </body>
