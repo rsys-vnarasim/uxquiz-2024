@@ -1,3 +1,5 @@
+import { Confetti } from './confetti.js';
+
 // game.js
 export default class QuizGame {
     constructor(container, data) {
@@ -13,6 +15,7 @@ export default class QuizGame {
         };
         this.timer = null;
         this.timeLimit = 30;
+        this.confetti = new Confetti();
     }
 
     init() {
@@ -65,6 +68,19 @@ export default class QuizGame {
     }
 
     renderQuestion() {
+        const currentLevelData = this.data.levels[this.currentLevel];
+        
+        if (this.currentQuestion >= currentLevelData.questions.length) {
+            await this.celebrateLevel();
+            this.currentLevel++;
+            this.currentQuestion = 0;
+            
+            if (this.currentLevel >= this.data.levels.length) {
+                this.endGame();
+                return;
+            }
+        }
+        
         // Check if game is complete
         if (this.currentLevel >= this.data.levels.length) {
             this.endGame();
@@ -253,5 +269,23 @@ export default class QuizGame {
         if (percentage >= 70) return "UX Professional! Great knowledge of UX concepts!";
         if (percentage >= 50) return "UX Enthusiast! Good foundation in UX principles!";
         return "UX Learner! Keep studying and practicing!";
+    }
+
+    async celebrateLevel() {
+        const levelCompleteDiv = document.createElement('div');
+        levelCompleteDiv.className = 'level-complete';
+        levelCompleteDiv.innerHTML = `
+            <h2>Level ${this.currentLevel + 1} Complete!</h2>
+            <p>Moving to next level...</p>
+        `;
+        this.container.appendChild(levelCompleteDiv);
+
+        // Trigger confetti
+        this.confetti.celebrate();
+
+        // Wait for animation
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        levelCompleteDiv.remove();
     }
 }
