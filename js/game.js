@@ -68,55 +68,64 @@ export default class QuizGame {
     }
 
     async renderQuestion() {
-        const currentLevelData = this.data.levels[this.currentLevel];
-        
-        if (this.currentQuestion >= currentLevelData.questions.length) {
-            await this.celebrateLevel();
-            this.currentLevel++;
-            this.currentQuestion = 0;
-            
-            if (this.currentLevel >= this.data.levels.length) {
+        try {
+            // First check if current level data exists
+            const currentLevelData = this.data.levels[this.currentLevel];
+            if (!currentLevelData) {
                 this.endGame();
                 return;
             }
-        }
-        
-        // Remove duplicate check since it's already done above
-        if (this.currentLevel >= this.data.levels.length) {
+    
+            // Check if we need to move to next level
+            if (this.currentQuestion >= currentLevelData.questions.length) {
+                await this.celebrateLevel();
+                this.currentLevel++;
+                this.currentQuestion = 0;
+                
+                // Check if game is complete after level increment
+                if (this.currentLevel >= this.data.levels.length) {
+                    this.endGame();
+                    return;
+                }
+    
+                // Get the new level data after increment
+                currentLevelData = this.data.levels[this.currentLevel];
+            }
+    
+            const question = currentLevelData.questions[this.currentQuestion];
+    
+            this.container.innerHTML = `
+                <div class="slide active">
+                    <div class="level-indicator">${currentLevelData.name}</div>
+                    <div class="score-board">Score: ${this.score}</div>
+                    
+                    <div class="question">${question.text}</div>
+                    
+                    <div class="timer-bar">
+                        <div class="timer-progress" style="width: 100%"></div>
+                    </div>
+    
+                    <div class="options">
+                        ${question.options.map((option, index) => `
+                            <div class="option" onclick="game.selectOption(${index})">${option}</div>
+                        `).join('')}
+                    </div>
+    
+                    <div class="lifelines">
+                        ${this.renderLifelines()}
+                    </div>
+    
+                    <div class="prize-levels">
+                        ${this.renderPrizeLevels()}
+                    </div>
+                </div>
+            `;
+    
+            this.startTimer();
+        } catch (error) {
+            console.error('Error rendering question:', error);
             this.endGame();
-            return;
         }
-    
-        const question = this.data.levels[this.currentLevel].questions[this.currentQuestion];
-    
-        this.container.innerHTML = `
-            <div class="slide active">
-                <div class="level-indicator">${this.data.levels[this.currentLevel].name}</div>
-                <div class="score-board">Score: ${this.score}</div>
-                
-                <div class="question">${question.text}</div>
-                
-                <div class="timer-bar">
-                    <div class="timer-progress" style="width: 100%"></div>
-                </div>
-    
-                <div class="options">
-                    ${question.options.map((option, index) => `
-                        <div class="option" onclick="game.selectOption(${index})">${option}</div>
-                    `).join('')}
-                </div>
-    
-                <div class="lifelines">
-                    ${this.renderLifelines()}
-                </div>
-    
-                <div class="prize-levels">
-                    ${this.renderPrizeLevels()}
-                </div>
-            </div>
-        `;
-    
-        this.startTimer();
     }
 
     selectOption(index) {
@@ -268,10 +277,10 @@ export default class QuizGame {
             <p>Moving to next level...</p>
         `;
         this.container.appendChild(levelCompleteDiv);
-
+    
         // Trigger confetti
         this.confetti.celebrate();
-
+    
         // Wait for animation
         await new Promise(resolve => setTimeout(resolve, 2000));
         
