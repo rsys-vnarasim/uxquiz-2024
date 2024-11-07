@@ -8,8 +8,10 @@ const quizData = {
                 {
                     text: "You're designing a data table. Which is better?",
                     options: [
-                        "Show all 100 columns by default",
+                        "Show all 100 columns by default for complete visibility",
                         "Show 10 most used columns with option to add more",
+                        "Display random 25 columns that rotate periodically",
+                        "Let users manually select columns every time"
                     ],
                     correct: 1,
                     explanation: "Progressive disclosure helps reduce cognitive load while maintaining functionality."
@@ -17,8 +19,10 @@ const quizData = {
                 {
                     text: "A user needs to delete their account. Better approach?",
                     options: [
-                        "Three confirmation popups",
+                        "Multiple confirmation popups for security",
                         "One clear warning with consequences + 30-day recovery period",
+                        "Immediate deletion without warning",
+                        "Require admin approval for deletion"
                     ],
                     correct: 1,
                     explanation: "Single clear warning with recovery option balances security with user experience."
@@ -28,6 +32,8 @@ const quizData = {
                     options: [
                         "System Status: Error Code 5XX",
                         "Having trouble connecting to servers - we're fixing it! Check back in 5 mins",
+                        "System currently experiencing technical difficulties",
+                        "Error detected - contact system administrator"
                     ],
                     correct: 1,
                     explanation: "Human-readable messages with clear timeframes provide better user experience."
@@ -37,6 +43,8 @@ const quizData = {
                     options: [
                         "Most recent results first",
                         "Most relevant results first",
+                        "Alphabetically ordered results",
+                        "Random order to avoid bias"
                     ],
                     correct: 1,
                     explanation: "Relevance typically matters more than recency for search functionality."
@@ -46,6 +54,8 @@ const quizData = {
                     options: [
                         "All metrics visible at once (requires scrolling)",
                         "Categorized metrics in expandable sections",
+                        "Rotating dashboard showing different metrics",
+                        "Single metric at a time with navigation"
                     ],
                     correct: 1,
                     explanation: "Organized, categorized information helps users find what they need more efficiently."
@@ -61,6 +71,8 @@ const quizData = {
                     options: [
                         "Show all errors after submit",
                         "Show errors as user types",
+                        "Show errors on field focus",
+                        "Show errors on page load"
                     ],
                     correct: 1,
                     explanation: "Immediate feedback helps users correct errors as they go, reducing frustration."
@@ -70,6 +82,8 @@ const quizData = {
                     options: [
                         "What's New popup at every login",
                         "Subtle indicator with option to view changes",
+                        "Email notifications for all updates",
+                        "Force users to view updates before continuing"
                     ],
                     correct: 1,
                     explanation: "Non-intrusive notifications respect user focus while maintaining awareness."
@@ -79,6 +93,8 @@ const quizData = {
                     options: [
                         "One 'Export' button with format selection in dropdown",
                         "Separate buttons for each export format",
+                        "Export options in a separate page",
+                        "Export options in context menu only"
                     ],
                     correct: 0,
                     explanation: "Consolidated actions reduce interface clutter and improve scalability."
@@ -86,8 +102,10 @@ const quizData = {
                 {
                     text: "Task assignment:",
                     options: [
-                        "Can assign multiple tasks at once without details",
-                        "Must assign tasks one by one with required details",
+                        "Bulk assign without details",
+                        "One-by-one assignment with required details",
+                        "Template-based bulk assignment",
+                        "Automated assignment based on rules"
                     ],
                     correct: 1,
                     explanation: "Detailed individual assignments reduce errors and improve task clarity."
@@ -95,8 +113,10 @@ const quizData = {
                 {
                     text: "Filter interface:",
                     options: [
-                        "All filter options visible at once",
+                        "All filters visible at once",
                         "Most used filters visible, others in 'More Filters'",
+                        "Search-based filter discovery",
+                        "AI-powered automatic filtering"
                     ],
                     correct: 1,
                     explanation: "Progressive disclosure of filters balances power with simplicity."
@@ -108,56 +128,56 @@ const quizData = {
             points: 20,
             questions: [
                 {
-                    text: "A B2B platform's onboarding shows 15 tooltip popups in sequence. What's the problem?",
+                    text: "What's wrong with showing 15 tooltip popups in sequence during onboarding?",
                     options: [
-                        "Too many popups overwhelm users",
+                        "Takes too much time",
                         "Information overload reduces retention",
-                        "Disrupts user's learning flow",
-                        "Forces linear learning path"
+                        "Some users might skip it",
+                        "Too few tooltips for complete guidance"
                     ],
                     correct: 1,
                     explanation: "Users can't retain so much information at once; better to provide contextual help when needed."
                 },
                 {
-                    text: "Every field in a form is marked with a red asterisk. What's the issue?",
+                    text: "What's wrong with marking every form field with a red asterisk?",
                     options: [
-                        "Too much red color",
-                        "Visual meaning is lost",
-                        "Causes user anxiety",
-                        "Poor accessibility"
+                        "Not colorblind friendly",
+                        "Visual meaning is lost when everything is required",
+                        "Red is too aggressive",
+                        "Asterisks are hard to see"
                     ],
                     correct: 1,
-                    explanation: "When everything is required, the visual indicator loses its meaning and purpose."
+                    explanation: "When everything is marked as required, the visual indicator loses its meaning and purpose."
                 },
                 {
-                    text: "A dashboard auto-refreshes every 30 seconds, resetting scroll position. What's the problem?",
+                    text: "A dashboard auto-refreshes every 30 seconds, resetting scroll position. Problem?",
                     options: [
-                        "Data might change too frequently",
+                        "Too frequent updates",
                         "Disrupts user focus and reading",
-                        "Wastes system resources",
-                        "Could miss important updates"
+                        "High server load",
+                        "Data might be inaccurate"
                     ],
                     correct: 1,
                     explanation: "Resetting scroll position disrupts user focus and workflow."
                 },
                 {
-                    text: "All notifications use the same bell icon. What's the issue?",
+                    text: "All notifications use the same bell icon. Issue?",
                     options: [
-                        "No priority differentiation",
-                        "Creates notification fatigue",
-                        "Hard to scan quickly",
-                        "Misses important alerts"
+                        "Lack of priority differentiation",
+                        "Icon choice is too generic",
+                        "Notifications might be missed",
+                        "Too many notifications"
                     ],
                     correct: 0,
                     explanation: "Users can't quickly distinguish between critical and non-critical notifications."
                 },
                 {
-                    text: "A 'Save' button is placed in different locations on different pages. What's the problem?",
+                    text: "The 'Save' button location changes on different pages. Problem?",
                     options: [
-                        "Inconsistent UI pattern",
-                        "Breaks muscle memory",
-                        "Increases cognitive load",
-                        "Reduces efficiency"
+                        "Inconsistent visual design",
+                        "Breaks user muscle memory",
+                        "Takes up extra space",
+                        "Might be overlooked"
                     ],
                     correct: 1,
                     explanation: "Inconsistent button placement prevents users from developing muscle memory."
@@ -169,56 +189,56 @@ const quizData = {
             points: 25,
             questions: [
                 {
-                    text: "User settings are split between 'Preferences,' 'Settings,' and 'Configuration.' What's the issue?",
+                    text: "Settings are split between 'Preferences,' 'Settings,' and 'Configuration.' Issue?",
                     options: [
-                        "Confusing navigation",
-                        "Redundant categories",
+                        "Too many options",
+                        "Confusing terminology",
                         "Poor information architecture",
-                        "Cognitive overload"
+                        "Settings might conflict"
                     ],
                     correct: 2,
                     explanation: "Poor information architecture creates confusion and makes settings hard to find."
                 },
                 {
-                    text: "Every team member can see all data by default. What's the problem?",
+                    text: "Every team member can see all data by default. Problem?",
                     options: [
-                        "Privacy concerns",
-                        "Security vulnerability",
                         "Information overload",
-                        "Potential data misuse"
+                        "Security vulnerability",
+                        "Slow system performance",
+                        "Difficult to manage"
                     ],
                     correct: 1,
                     explanation: "Default access to all data creates security risks and violates least-privilege principle."
                 },
                 {
-                    text: "The platform has 12 different ways to create a new project. What's the issue?",
+                    text: "12 different ways to create a new project. Issue?",
                     options: [
-                        "Feature bloat",
-                        "Decision paralysis",
-                        "Maintenance nightmare",
-                        "User confusion"
+                        "Too many features to maintain",
+                        "Creates decision paralysis",
+                        "Inconsistent project creation",
+                        "Training difficulty"
                     ],
                     correct: 1,
                     explanation: "Too many options create decision paralysis and confusion rather than flexibility."
                 },
                 {
-                    text: "Error messages show technical database codes. What's the problem?",
+                    text: "Error messages show technical database codes. Problem?",
                     options: [
-                        "Technical jargon",
-                        "User confusion",
-                        "Unhelpful feedback",
-                        "Poor user experience"
+                        "Security risk",
+                        "Developer-centric approach",
+                        "Unhelpful for users",
+                        "Localization issues"
                     ],
                     correct: 2,
                     explanation: "Technical error codes don't help users understand or resolve the issue."
                 },
                 {
-                    text: "The UI uses 8 different blue shades for clickable items. What's the issue?",
+                    text: "8 different blue shades for clickable items. Issue?",
                     options: [
-                        "Visual inconsistency",
-                        "Cognitive load",
-                        "Poor accessibility",
-                        "User confusion"
+                        "Inconsistent visual cues",
+                        "Color management complexity",
+                        "Accessibility concerns",
+                        "Design system violations"
                     ],
                     correct: 0,
                     explanation: "Inconsistent visual indicators make it harder to identify interactive elements."
@@ -230,56 +250,56 @@ const quizData = {
             points: 30,
             questions: [
                 {
-                    text: "Users keep accidentally deleting important files. What's your fix?",
+                    text: "Users accidentally delete important files. Your fix?",
                     options: [
-                        "Add multiple confirmation dialogs",
-                        "Implement 30-day soft delete with recovery option",
-                        "Require admin approval for deletions",
-                        "Hide delete option in submenu"
+                        "Add confirmation dialogs",
+                        "Implement 30-day soft delete with recovery",
+                        "Require manager approval",
+                        "Remove delete option"
                     ],
                     correct: 1,
                     explanation: "Soft delete with recovery period provides safety net without adding friction."
                 },
                 {
-                    text: "New users are overwhelmed by the complex interface. What's your solution?",
+                    text: "Users are overwhelmed by the complex interface. Solution?",
                     options: [
                         "Progressive feature disclosure",
-                        "Extensive tutorial system",
+                        "Mandatory training sessions",
                         "Simplified interface for everyone",
-                        "Better documentation"
+                        "Extensive documentation"
                     ],
                     correct: 0,
                     explanation: "Progressive disclosure allows users to learn and grow with the interface."
                 },
                 {
-                    text: "Users can't find recently accessed items. What's your solution?",
+                    text: "Users can't find recently accessed items. Solution?",
                     options: [
-                        "Add a 'Recent Items' section",
-                        "Implement better search",
-                        "Add more navigation options",
-                        "Improve file organization"
+                        "Add 'Recent Items' section",
+                        "Improve search functionality",
+                        "Add bookmarking feature",
+                        "Send email summaries"
                     ],
                     correct: 0,
                     explanation: "Recent items section provides quick access to frequently used content."
                 },
                 {
-                    text: "Support gets flooded with 'where do I find X' tickets. What's your fix?",
+                    text: "'Where do I find X' support tickets flood. Fix?",
                     options: [
-                        "Improve navigation structure",
-                        "Add better search functionality",
-                        "Create more documentation",
+                        "Add more documentation",
+                        "Redesign navigation",
+                        "Add search function",
                         "Implement contextual help"
                     ],
                     correct: 3,
                     explanation: "Contextual help provides assistance when and where users need it."
                 },
                 {
-                    text: "Users complain about too many mandatory fields. What's your solution?",
+                    text: "Too many mandatory fields complaint. Solution?",
                     options: [
-                        "Reduce required fields to essential only",
-                        "Split form into multiple steps",
-                        "Add field requirements explanation",
-                        "Make fields optional but highlighted"
+                        "Keep only essential required fields",
+                        "Split form into steps",
+                        "Add field explanations",
+                        "Make all fields optional"
                     ],
                     correct: 0,
                     explanation: "Only require truly essential information to reduce user friction."
