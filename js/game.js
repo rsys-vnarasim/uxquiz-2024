@@ -66,16 +66,17 @@ export default class QuizGame {
             </div>
         `).reverse().join('');
     }
-
+    
     async renderQuestion() {
         try {
-            // First check if current level data exists
-            const currentLevelData = this.data.levels[this.currentLevel];
-            if (!currentLevelData) {
+            // First check if game is complete
+            if (this.currentLevel >= this.data.levels.length) {
                 this.endGame();
                 return;
             }
     
+            let currentLevelData = this.data.levels[this.currentLevel];
+            
             // Check if we need to move to next level
             if (this.currentQuestion >= currentLevelData.questions.length) {
                 await this.celebrateLevel();
@@ -87,8 +88,7 @@ export default class QuizGame {
                     this.endGame();
                     return;
                 }
-    
-                // Get the new level data after increment
+                
                 currentLevelData = this.data.levels[this.currentLevel];
             }
     
