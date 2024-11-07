@@ -67,7 +67,7 @@ export default class QuizGame {
         `).reverse().join('');
     }
 
-    renderQuestion() {
+    async renderQuestion() {
         const currentLevelData = this.data.levels[this.currentLevel];
         
         if (this.currentQuestion >= currentLevelData.questions.length) {
@@ -81,25 +81,14 @@ export default class QuizGame {
             }
         }
         
-        // Check if game is complete
+        // Remove duplicate check since it's already done above
         if (this.currentLevel >= this.data.levels.length) {
             this.endGame();
             return;
         }
-
-        // Check if level is complete
-        const currentLevelData = this.data.levels[this.currentLevel];
-        if (this.currentQuestion >= currentLevelData.questions.length) {
-            this.currentLevel++;
-            this.currentQuestion = 0;
-            if (this.currentLevel >= this.data.levels.length) {
-                this.endGame();
-                return;
-            }
-        }
-
+    
         const question = this.data.levels[this.currentLevel].questions[this.currentQuestion];
-
+    
         this.container.innerHTML = `
             <div class="slide active">
                 <div class="level-indicator">${this.data.levels[this.currentLevel].name}</div>
@@ -110,23 +99,23 @@ export default class QuizGame {
                 <div class="timer-bar">
                     <div class="timer-progress" style="width: 100%"></div>
                 </div>
-
+    
                 <div class="options">
                     ${question.options.map((option, index) => `
                         <div class="option" onclick="game.selectOption(${index})">${option}</div>
                     `).join('')}
                 </div>
-
+    
                 <div class="lifelines">
                     ${this.renderLifelines()}
                 </div>
-
+    
                 <div class="prize-levels">
                     ${this.renderPrizeLevels()}
                 </div>
             </div>
         `;
-
+    
         this.startTimer();
     }
 
